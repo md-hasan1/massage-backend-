@@ -18,7 +18,7 @@ export const verifyToken = (token: string, secret: string): any => {
   try {
     return jwt.verify(token, secret);
   } catch (error: any) {
-    logger.debug(`JWT verification failed: ${error.message}`);
+    logger.error(`JWT verification error: ${error.message}`);
     return null;
   }
 };

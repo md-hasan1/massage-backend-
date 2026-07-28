@@ -11,8 +11,8 @@ export const config = {
   jwt: {
     accessSecret: process.env.JWT_ACCESS_SECRET || 'access_secret',
     refreshSecret: process.env.JWT_REFRESH_SECRET || 'refresh_secret',
-    accessExpiry: process.env.JWT_ACCESS_EXPIRY || '15m',
-    refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '7d',
+    accessExpiry: process.env.JWT_ACCESS_EXPIRY || '30d',
+    refreshExpiry: process.env.JWT_REFRESH_EXPIRY || '30d',
   },
   cloudinary: {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
