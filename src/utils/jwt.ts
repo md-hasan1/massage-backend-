@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
+import { logger } from './logger';
 
 export const generateAccessToken = (userId: string): string => {
   return jwt.sign({ userId }, config.jwt.accessSecret, {
@@ -16,7 +17,8 @@ export const generateRefreshToken = (userId: string): string => {
 export const verifyToken = (token: string, secret: string): any => {
   try {
     return jwt.verify(token, secret);
-  } catch (error) {
+  } catch (error: any) {
+    logger.debug(`JWT verification failed: ${error.message}`);
     return null;
   }
 };
