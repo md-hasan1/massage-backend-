@@ -1,18 +1,18 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getMessaging } from 'firebase-admin/messaging';
-import path from 'path';
-import fs from 'fs';
 import User from '../modules/user/user.model';
-
-const serviceAccountPath = path.join(__dirname, '../../../config/firebase-service-account.json');
+import { config } from '../../config';
 
 let isFirebaseInitialized = false;
 
-if (fs.existsSync(serviceAccountPath)) {
+if (config.firebase.projectId && config.firebase.clientEmail && config.firebase.privateKey) {
   try {
-    const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
     initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert({
+        projectId: config.firebase.projectId,
+        clientEmail: config.firebase.clientEmail,
+        privateKey: config.firebase.privateKey,
+      }),
     });
     isFirebaseInitialized = true;
     console.log('[info]: Firebase Admin SDK initialized successfully.');
@@ -21,7 +21,7 @@ if (fs.existsSync(serviceAccountPath)) {
   }
 } else {
   console.warn(
-    `[warning]: Firebase service account key not found at: ${serviceAccountPath}. Push notifications will run in Mock mode.`
+    `[warning]: Firebase service account credentials not found in env. Push notifications will run in Mock mode.`
   );
 }
 
