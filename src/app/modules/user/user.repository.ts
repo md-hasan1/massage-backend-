@@ -20,7 +20,7 @@ export class UserRepository {
 
   async update(id: string, updateData: UpdateQuery<IUser>): Promise<IUser | null> {
     return User.findOneAndUpdate({ _id: id, isDeleted: false }, updateData, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).exec();
   }

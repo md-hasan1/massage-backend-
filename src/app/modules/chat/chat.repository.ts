@@ -62,7 +62,7 @@ export class ChatRepository {
     return Chat.findByIdAndUpdate(
       chatId,
       { lastMessage: new Types.ObjectId(messageId) },
-      { new: true }
+      { returnDocument: 'after' }
     ).exec();
   }
 
@@ -72,7 +72,7 @@ export class ChatRepository {
     return Chat.findByIdAndUpdate(
       chatId,
       { $inc: { [fieldKey]: 1 } },
-      { new: true }
+      { returnDocument: 'after' }
     ).exec();
   }
 
@@ -82,7 +82,7 @@ export class ChatRepository {
     return Chat.findByIdAndUpdate(
       chatId,
       { $set: { [fieldKey]: 0 } },
-      { new: true }
+      { returnDocument: 'after' }
     ).exec();
   }
 
@@ -91,7 +91,7 @@ export class ChatRepository {
     return Chat.findByIdAndUpdate(
       chatId,
       { $addToSet: { pinnedBy: new Types.ObjectId(userId) } },
-      { new: true }
+      { returnDocument: 'after' }
     ).exec();
   }
 
@@ -100,13 +100,13 @@ export class ChatRepository {
     return Chat.findByIdAndUpdate(
       chatId,
       { $pull: { pinnedBy: new Types.ObjectId(userId) } },
-      { new: true }
+      { returnDocument: 'after' }
     ).exec();
   }
 
   /// Soft delete a chat (e.g. mark it as deleted for database hygiene)
   async softDelete(chatId: string): Promise<IChat | null> {
-    return Chat.findByIdAndUpdate(chatId, { isDeleted: true }, { new: true }).exec();
+    return Chat.findByIdAndUpdate(chatId, { isDeleted: true }, { returnDocument: 'after' }).exec();
   }
 }
 

@@ -49,7 +49,7 @@ export class FriendshipRepository {
 
   /// Update the status of a request
   async updateStatus(id: string, status: 'accepted' | 'rejected'): Promise<IFriendship | null> {
-    return Friendship.findByIdAndUpdate(id, { status }, { new: true }).exec();
+    return Friendship.findByIdAndUpdate(id, { status }, { returnDocument: 'after' }).exec();
   }
 
   /// Delete a friendship record

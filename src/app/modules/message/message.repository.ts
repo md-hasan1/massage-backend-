@@ -115,7 +115,7 @@ export class MessageRepository {
         content: newContent,
         isEdited: true,
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('senderId', 'name email photoUrl').exec();
   }
 
@@ -130,7 +130,7 @@ export class MessageRepository {
         content: 'This message was deleted',
         isDeletedForEveryone: true,
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('senderId', 'name email photoUrl').exec();
   }
 
@@ -139,7 +139,7 @@ export class MessageRepository {
     return Message.findByIdAndUpdate(
       messageId,
       { $addToSet: { deletedBy: new Types.ObjectId(userId) } },
-      { new: true }
+      { returnDocument: 'after' }
     ).populate('senderId', 'name email photoUrl').exec();
   }
 }
