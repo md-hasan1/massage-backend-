@@ -67,7 +67,6 @@ const chatSchema = new Schema<IChat>(
 
 // Indexes for fast lookups
 chatSchema.index({ participants: 1 });
-chatSchema.index({ isDeleted: 1 });
 
 export const Chat = model<IChat>('Chat', chatSchema);
 export default Chat;
