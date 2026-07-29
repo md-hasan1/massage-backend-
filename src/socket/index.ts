@@ -24,9 +24,10 @@ export const getIO = (): SocketServer => {
   return ioInstance;
 };
 
-export const emitToUser = (userId: string, event: string, data: any) => {
-  const socketIds = activeConnections.get(userId);
-  logger.debug(`emitToUser: userId = ${userId}, event = ${event}, active socketIds = ${JSON.stringify(socketIds)}`);
+export const emitToUser = (userId: any, event: string, data: any) => {
+  const targetId = userId?.toString() ?? '';
+  const socketIds = activeConnections.get(targetId);
+  logger.debug(`emitToUser: userId = ${targetId}, event = ${event}, active socketIds = ${JSON.stringify(socketIds)}`);
   if (socketIds && socketIds.length > 0) {
     const io = getIO();
     socketIds.forEach((socketId) => {
@@ -61,13 +62,13 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       return next(new Error('Invalid or expired authentication token'));
     }
 
-    // Attach userId to socket session
-    socket.data.userId = payload.userId;
+    // Attach userId to socket session as a string
+    socket.data.userId = payload.userId.toString();
     next();
   });
 
   io.on('connection', async (socket: Socket) => {
-    const userId = socket.data.userId;
+    const userId = socket.data.userId.toString();
     logger.info(`Socket client connected: SocketID = ${socket.id}, UserID = ${userId}`);
 
     // Register active connection
