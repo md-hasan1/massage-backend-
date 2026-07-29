@@ -114,6 +114,8 @@ export const sendCallPushNotification = async (
     chatId?: string;
     callerId: string;
     offer: any;
+    channelName?: string;
+    agoraToken?: string;
   }
 ): Promise<void> => {
   if (!isFirebaseInitialized) {
@@ -134,6 +136,8 @@ export const sendCallPushNotification = async (
       isVideo: String(payload.isVideo),
       chatId: payload.chatId || '',
       callerId: payload.callerId,
+      channelName: payload.channelName || '',
+      agoraToken: payload.agoraToken || '',
       offer: typeof payload.offer === 'string' ? payload.offer : JSON.stringify(payload.offer),
     };
 
