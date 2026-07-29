@@ -54,13 +54,19 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
     }
 
     let cleanToken = (token || '').trim();
-    if (cleanToken.startsWith('Bearer ')) {
-      cleanToken = cleanToken.slice(7).trim();
+    // Iteratively strip leading "Bearer ", quotes, and whitespace
+    while (
+      cleanToken.toLowerCase().startsWith('bearer ') ||
+      (cleanToken.startsWith('"') && cleanToken.endsWith('"')) ||
+      (cleanToken.startsWith("'") && cleanToken.endsWith("'"))
+    ) {
+      if (cleanToken.toLowerCase().startsWith('bearer ')) {
+        cleanToken = cleanToken.slice(7).trim();
+      } else {
+        cleanToken = cleanToken.slice(1, -1).trim();
+      }
     }
-    // Remove enclosing double quotes if token was JSON stringified
-    if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
-      cleanToken = cleanToken.slice(1, -1);
-    }
+
     logger.info(`Socket Handshake Token: ${cleanToken.substring(0, 20)}...`);
     const payload = verifyToken(cleanToken, config.jwt.accessSecret);
 
