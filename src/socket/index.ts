@@ -7,7 +7,7 @@ import User from '../app/modules/user/user.model';
 import MessageService from '../app/modules/message/message.service';
 import MessageRepository from '../app/modules/message/message.repository';
 import ChatRepository from '../app/modules/chat/chat.repository';
-import { sendPushNotification } from '../app/helpers/notification.helper';
+import { sendPushNotification, sendCallPushNotification } from '../app/helpers/notification.helper';
 
 // Keep track of active connections: Maps userId -> Array of socketIds
 export const activeConnections = new Map<string, string[]>();
@@ -239,9 +239,26 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
     });
 
     // Handle calling (WebRTC signaling)
-    socket.on('call_offer', (data: { to: string; offer: any; isVideo?: boolean; chatId?: string }) => {
+    socket.on('call_offer', async (data: { to: string; offer: any; isVideo?: boolean; chatId?: string }) => {
       logger.info(`Routing call_offer from ${userId} to ${data.to}`);
       emitToUser(data.to, 'call_offer', { from: userId, offer: data.offer, isVideo: data.isVideo, chatId: data.chatId });
+
+      // Always dispatch high-priority FCM call push notification so background/terminated clients show full-screen incoming call UI
+      try {
+        const caller = await User.findById(userId);
+        const callerName = caller ? caller.name : 'Incoming Call';
+        const callerAvatar = caller ? caller.avatar : '';
+        sendCallPushNotification(data.to, {
+          callerName,
+          callerAvatar,
+          isVideo: data.isVideo ?? false,
+          chatId: data.chatId,
+          callerId: userId,
+          offer: data.offer,
+        });
+      } catch (err: any) {
+        logger.error(`Failed to send call push notification: ${err.message}`);
+      }
     });
 
     socket.on('call_answer', (data: { to: string; answer: any }) => {
