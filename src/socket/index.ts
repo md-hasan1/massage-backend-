@@ -261,10 +261,43 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       }
     });
 
-    // Handle calling (WebRTC signaling)
-    socket.on('call_offer', async (data: { to: string; offer: any; isVideo?: boolean; chatId?: string }) => {
+    // Handle Agora RTC Token Generation
+    socket.on('request_agora_token', (data: { channelName: string; uid?: number }, callback?: Function) => {
+      try {
+        const { RtcTokenBuilder, RtcRole } = require('agora-token');
+        const channelName = data.channelName;
+        const uid = data.uid || 0; // 0 allows Agora to auto-assign or use numeric ID
+        const role = RtcRole.PUBLISHER;
+        const expirationTimeInSeconds = 3600 * 24; // 24 hours
+        const currentTimestamp = Math.floor(Date.now() / 1000);
+        const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
+
+        const token = RtcTokenBuilder.buildTokenWithUid(
+          config.agora.appId,
+          config.agora.appCertificate,
+          channelName,
+          uid,
+          role,
+          privilegeExpiredTs
+        );
+
+        logger.info(`Generated Agora RTC token for channel ${channelName}, uid ${uid}`);
+
+        if (callback) {
+          callback({ status: 'success', token, appId: config.agora.appId, channelName });
+        }
+      } catch (err: any) {
+        logger.error(`Failed to generate Agora token: ${err.message}`);
+        if (callback) {
+          callback({ status: 'error', message: err.message });
+        }
+      }
+    });
+
+    // Handle calling (WebRTC signaling & Agora channel setup)
+    socket.on('call_offer', async (data: { to: string; offer: any; isVideo?: boolean; chatId?: string; channelName?: string; agoraToken?: string }) => {
       logger.info(`Routing call_offer from ${userId} to ${data.to}`);
-      emitToUser(data.to, 'call_offer', { from: userId, offer: data.offer, isVideo: data.isVideo, chatId: data.chatId });
+      emitToUser(data.to, 'call_offer', { from: userId, offer: data.offer, isVideo: data.isVideo, chatId: data.chatId, channelName: data.channelName, agoraToken: data.agoraToken });
 
       // Always dispatch high-priority FCM call push notification so background/terminated clients show full-screen incoming call UI
       try {
@@ -278,6 +311,8 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
           chatId: data.chatId,
           callerId: userId,
           offer: data.offer,
+          channelName: data.channelName,
+          agoraToken: data.agoraToken,
         });
       } catch (err: any) {
         logger.error(`Failed to send call push notification: ${err.message}`);
