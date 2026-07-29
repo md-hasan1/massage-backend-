@@ -53,7 +53,14 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       return next(new Error('Authentication token required'));
     }
 
-    const cleanToken = token.startsWith('Bearer ') ? token.slice(7) : token;
+    let cleanToken = (token || '').trim();
+    if (cleanToken.startsWith('Bearer ')) {
+      cleanToken = cleanToken.slice(7).trim();
+    }
+    // Remove enclosing double quotes if token was JSON stringified
+    if (cleanToken.startsWith('"') && cleanToken.endsWith('"')) {
+      cleanToken = cleanToken.slice(1, -1);
+    }
     logger.info(`Socket Handshake Token: ${cleanToken.substring(0, 20)}...`);
     const payload = verifyToken(cleanToken, config.jwt.accessSecret);
 
