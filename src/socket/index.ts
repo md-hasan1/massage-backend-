@@ -191,6 +191,15 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       socket.to(chatId).emit('stop_typing', { chatId, userId });
     });
 
+    // Handle user activity status (e.g. recording_audio, in_call, busy)
+    socket.on('user_activity', (data: { chatId?: string; activity: string }) => {
+      if (data.chatId) {
+        socket.to(data.chatId).emit('user_activity', { chatId: data.chatId, userId, activity: data.activity });
+      } else {
+        socket.broadcast.emit('user_activity', { userId, activity: data.activity });
+      }
+    });
+
     // Handle message delivered
     socket.on('message_delivered', async (data: { chatId: string }) => {
       try {
