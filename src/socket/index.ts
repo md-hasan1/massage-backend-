@@ -247,7 +247,7 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       try {
         const caller = await User.findById(userId);
         const callerName = caller ? caller.name : 'Incoming Call';
-        const callerAvatar = caller ? caller.avatar : '';
+        const callerAvatar = caller ? caller.photoUrl : '';
         sendCallPushNotification(data.to, {
           callerName,
           callerAvatar,
@@ -261,6 +261,11 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       }
     });
 
+    socket.on('call_ringing', (data: { to: string }) => {
+      logger.info(`Routing call_ringing from ${userId} to ${data.to}`);
+      emitToUser(data.to, 'call_ringing', { from: userId });
+    });
+
     socket.on('call_answer', (data: { to: string; answer: any }) => {
       logger.info(`Routing call_answer from ${userId} to ${data.to}`);
       emitToUser(data.to, 'call_answer', { from: userId, answer: data.answer });
@@ -271,9 +276,9 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       emitToUser(data.to, 'ice_candidate', { from: userId, candidate: data.candidate });
     });
 
-    socket.on('call_end', (data: { to: string }) => {
-      logger.info(`Routing call_end from ${userId} to ${data.to}`);
-      emitToUser(data.to, 'call_end', { from: userId });
+    socket.on('call_end', (data: { to: string; reason?: string }) => {
+      logger.info(`Routing call_end from ${userId} to ${data.to} (reason: ${data.reason || 'ended'})`);
+      emitToUser(data.to, 'call_end', { from: userId, reason: data.reason || 'ended' });
     });
 
     // Disconnect event handler
