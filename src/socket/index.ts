@@ -103,7 +103,7 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       async (
         messageData: {
           chatId: string;
-          messageType: 'text' | 'image' | 'audio' | 'file';
+          messageType: 'text' | 'image' | 'audio' | 'file' | 'call_log';
           content: string;
           fileInfo?: { name: string; size: number; mimeType: string };
           replyTo?: string;
@@ -145,7 +145,21 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
                 if (messageData.messageType === 'image') body = '📷 Photo';
                 else if (messageData.messageType === 'audio') body = '🎵 Voice message';
                 else if (messageData.messageType === 'file') body = `📄 ${messageData.fileInfo?.name || 'Document'}`;
-                else body = messageData.content;
+                else if (messageData.messageType === 'call_log') {
+                  try {
+                    const info = JSON.parse(messageData.content);
+                    const callName = info.isVideo ? 'Video call' : 'Voice call';
+                    if (info.callStatus === 'missed') {
+                      body = `📞 Missed ${callName}`;
+                    } else if (info.callStatus === 'connected') {
+                      body = `📞 ${callName} (${info.durationSeconds}s)`;
+                    } else {
+                      body = `📞 ${callName}`;
+                    }
+                  } catch (_) {
+                    body = '📞 Call';
+                  }
+                } else body = messageData.content;
 
                 sendPushNotification(recipientId, {
                   title: senderName,
@@ -222,6 +236,27 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
       } catch (error) {
         logger.error(`Failed to mark messages as seen: ${error}`);
       }
+    });
+
+    // Handle calling (WebRTC signaling)
+    socket.on('call_offer', (data: { to: string; offer: any; isVideo?: boolean; chatId?: string }) => {
+      logger.info(`Routing call_offer from ${userId} to ${data.to}`);
+      emitToUser(data.to, 'call_offer', { from: userId, offer: data.offer, isVideo: data.isVideo, chatId: data.chatId });
+    });
+
+    socket.on('call_answer', (data: { to: string; answer: any }) => {
+      logger.info(`Routing call_answer from ${userId} to ${data.to}`);
+      emitToUser(data.to, 'call_answer', { from: userId, answer: data.answer });
+    });
+
+    socket.on('ice_candidate', (data: { to: string; candidate: any }) => {
+      logger.debug(`Routing ice_candidate from ${userId} to ${data.to}`);
+      emitToUser(data.to, 'ice_candidate', { from: userId, candidate: data.candidate });
+    });
+
+    socket.on('call_end', (data: { to: string }) => {
+      logger.info(`Routing call_end from ${userId} to ${data.to}`);
+      emitToUser(data.to, 'call_end', { from: userId });
     });
 
     // Disconnect event handler

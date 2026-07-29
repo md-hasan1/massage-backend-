@@ -106,6 +106,58 @@ export class FriendController {
       next(error);
     }
   };
+
+  /// Block a user
+  blockUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { blockUserId } = req.body;
+
+      const result = await this.friendService.blockUser(userId, blockUserId);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'User blocked successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /// Unblock a user
+  unblockUser = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const { unblockUserId } = req.body;
+
+      const result = await this.friendService.unblockUser(userId, unblockUserId);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'User unblocked successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /// Get list of blocked users
+  getBlockedUsers = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user!.id;
+      const result = await this.friendService.getBlockedUsers(userId);
+
+      res.status(200).json({
+        status: 'success',
+        message: 'Blocked users retrieved successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default FriendController;

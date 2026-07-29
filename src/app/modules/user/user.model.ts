@@ -1,4 +1,4 @@
-import { Schema, model, Document } from 'mongoose';
+import { Schema, model, Document, Types } from 'mongoose';
 import bcrypt from 'bcryptjs';
 
 export interface IUser extends Document {
@@ -13,6 +13,7 @@ export interface IUser extends Document {
   lastSeen: Date;
   isDeleted: boolean;
   fcmTokens?: string[];
+  blockedUsers?: Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -72,6 +73,11 @@ const userSchema = new Schema<IUser>(
     },
     fcmTokens: {
       type: [String],
+      default: [],
+    },
+    blockedUsers: {
+      type: [Schema.Types.ObjectId],
+      ref: 'User',
       default: [],
     },
   },

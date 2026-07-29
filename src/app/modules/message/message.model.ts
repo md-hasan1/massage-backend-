@@ -3,7 +3,7 @@ import { Schema, model, Document, Types } from 'mongoose';
 export interface IMessage extends Document {
   chatId: Types.ObjectId;
   senderId: Types.ObjectId;
-  messageType: 'text' | 'image' | 'audio' | 'file';
+  messageType: 'text' | 'image' | 'audio' | 'file' | 'call_log';
   content: string;
   fileInfo?: {
     name: string;
@@ -38,7 +38,7 @@ const messageSchema = new Schema<IMessage>(
     },
     messageType: {
       type: String,
-      enum: ['text', 'image', 'audio', 'file'],
+      enum: ['text', 'image', 'audio', 'file', 'call_log'],
       default: 'text',
       required: true,
     },

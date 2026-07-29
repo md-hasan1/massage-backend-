@@ -3,6 +3,8 @@ import authRoutes from '../modules/auth/auth.routes';
 import friendRoutes from '../modules/friend/friend.routes';
 import chatRoutes from '../modules/chat/chat.routes';
 import messageRoutes from '../modules/message/message.routes';
+import callRoutes from '../modules/call/call.routes';
+import notificationRoutes from '../modules/notification/notification.routes';
 
 const router = Router();
 
@@ -23,6 +25,14 @@ const moduleRoutes = [
   {
     path: '/messages',
     route: messageRoutes,
+  },
+  {
+    path: '/calls',
+    route: callRoutes,
+  },
+  {
+    path: '/notifications',
+    route: notificationRoutes,
   },
 ];
 

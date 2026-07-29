@@ -14,7 +14,7 @@ export class MessageService {
     senderId: string,
     messageData: {
       chatId: string;
-      messageType: 'text' | 'image' | 'audio' | 'file';
+      messageType: 'text' | 'image' | 'audio' | 'file' | 'call_log';
       content: string;
       fileInfo?: { name: string; size: number; mimeType: string };
       replyTo?: string;

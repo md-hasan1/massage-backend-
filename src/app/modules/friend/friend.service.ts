@@ -1,5 +1,6 @@
 import FriendshipRepository from './friendship.repository';
 import UserRepository from '../user/user.repository';
+import User from '../user/user.model';
 import { AppError } from '../../../utils/AppError';
 import { sendPushNotification } from '../../helpers/notification.helper';
 import { emitToUser } from '../../../socket';
@@ -19,8 +20,18 @@ export class FriendService {
       throw new AppError('Recipient user not found', 404);
     }
 
-    const requester = await this.userRepository.findById(requesterId);
-    const requesterName = requester ? requester.name : 'Someone';
+    // Check if either user has blocked the other
+    const recipientUser = await User.findById(recipientId);
+    const requesterUser = await User.findById(requesterId);
+
+    const isRequesterBlocked = recipientUser?.blockedUsers?.some((id: any) => id.toString() === requesterId);
+    const isRecipientBlocked = requesterUser?.blockedUsers?.some((id: any) => id.toString() === recipientId);
+
+    if (isRequesterBlocked || isRecipientBlocked) {
+      throw new AppError('Action blocked by security settings', 400);
+    }
+
+    const requesterName = requesterUser ? requesterUser.name : 'Someone';
 
     const existing = await this.friendshipRepository.findFriendship(requesterId, recipientId);
     if (existing) {
@@ -279,11 +290,13 @@ export class FriendService {
   async searchUsers(userId: string, searchVal: string) {
     const cleanQuery = searchVal ? searchVal.trim() : '';
     
-    // Find matching users (limit to 50), excluding deleted and self
-    const User = require('../user/user.model').default;
+    // Find matching users (limit to 50), excluding deleted, self, and blocked ones
+    const currentUser = await User.findById(userId);
+    const blockedIds = currentUser?.blockedUsers || [];
     
     const queryObj: any = {
-      _id: { $ne: userId },
+      _id: { $ne: userId, $nin: blockedIds },
+      blockedUsers: { $ne: userId },
       isDeleted: false,
     };
 
@@ -329,6 +342,59 @@ export class FriendService {
         friendshipId,
       };
     });
+  }
+
+  /// Block a user
+  async blockUser(userId: string, blockUserId: string) {
+    if (userId === blockUserId) {
+      throw new AppError('You cannot block yourself', 400);
+    }
+
+    const userToBlock = await this.userRepository.findById(blockUserId);
+    if (!userToBlock) {
+      throw new AppError('User to block not found', 404);
+    }
+
+    // 1. Add to blockedUsers array in User document
+    await User.findByIdAndUpdate(userId, {
+      $addToSet: { blockedUsers: blockUserId },
+    });
+
+    // 2. Delete any existing friendship or pending request between the two users
+    const friendship = await this.friendshipRepository.findFriendship(userId, blockUserId);
+    if (friendship) {
+      await this.friendshipRepository.delete(friendship._id.toString());
+
+      // Emit socket events to notify the client-side UI of friendship removal
+      emitToUser(blockUserId, 'friend_request_event', {
+        action: 'unfriended',
+        friendshipId: friendship._id.toString(),
+        requesterId: friendship.requester.toString(),
+        recipientId: friendship.recipient.toString(),
+      });
+      emitToUser(userId, 'friend_request_event', {
+        action: 'unfriended',
+        friendshipId: friendship._id.toString(),
+        requesterId: friendship.requester.toString(),
+        recipientId: friendship.recipient.toString(),
+      });
+    }
+
+    return { success: true };
+  }
+
+  /// Unblock a user
+  async unblockUser(userId: string, unblockUserId: string) {
+    await User.findByIdAndUpdate(userId, {
+      $pull: { blockedUsers: unblockUserId },
+    });
+    return { success: true };
+  }
+
+  /// Retrieve the list of blocked users for a user
+  async getBlockedUsers(userId: string) {
+    const user = await User.findById(userId).populate('blockedUsers', 'name email photoUrl bio');
+    return user?.blockedUsers || [];
   }
 }
 export default FriendService;
