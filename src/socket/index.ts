@@ -90,7 +90,7 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
 
   io.on('connection', async (socket: Socket) => {
     const userId = socket.data.userId.toString();
-    logger.info(`Socket client connected: SocketID = ${socket.id}, UserID = ${userId}`);
+    logger.info(`🟢 Socket client connected: SocketID = ${socket.id}, UserID = ${userId}`);
 
     // Register active connection
     const userSockets = activeConnections.get(userId) || [];
