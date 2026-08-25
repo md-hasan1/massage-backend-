@@ -62,12 +62,14 @@ export class FriendService {
         friendshipId,
         requesterId,
         recipientId,
+        requesterName,
       });
       emitToUser(requesterId, 'friend_request_event', {
         action: 'sent',
         friendshipId,
         requesterId,
         recipientId,
+        requesterName,
       });
 
       return existing;
@@ -89,12 +91,14 @@ export class FriendService {
       friendshipId,
       requesterId,
       recipientId,
+      requesterName,
     });
     emitToUser(requesterId, 'friend_request_event', {
       action: 'sent',
       friendshipId,
       requesterId,
       recipientId,
+      requesterName,
     });
 
     return friendship;
@@ -172,12 +176,14 @@ export class FriendService {
         friendshipId: requestId,
         requesterId,
         recipientId,
+        recipientName,
       });
       emitToUser(userId, 'friend_request_event', {
         action: 'accepted',
         friendshipId: requestId,
         requesterId,
         recipientId,
+        recipientName,
       });
 
       return updated;
