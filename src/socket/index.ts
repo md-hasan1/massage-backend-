@@ -147,11 +147,16 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
           const chat = await chatRepository.findById(messageData.chatId);
           if (chat) {
             logger.debug(`Message socket handler: Chat participants = ${JSON.stringify(chat.participants.map(p => ({ id: p._id, name: (p as any).name })))}`);
-            // Also emit the message to all participants individually so their chat lists update in real-time
+            // Emit the message to participants who are NOT in the active chat room so their conversation list updates
             chat.participants.forEach((p: any) => {
               const participantId = p._id.toString();
-              logger.debug(`Emitting message to participantId = ${participantId}`);
-              emitToUser(participantId, 'message', message);
+              const socketIds = activeConnections.get(participantId) || [];
+              socketIds.forEach((sId) => {
+                const clientSocket = io.sockets.sockets.get(sId);
+                if (clientSocket && !clientSocket.rooms.has(messageData.chatId)) {
+                  clientSocket.emit('message', message);
+                }
+              });
             });
 
             const sender = chat.participants.find(p => p._id.toString() === userId);
@@ -230,13 +235,19 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
         const payload = { chatId: data.chatId, userId, deliveredAt: now.toISOString() };
         socket.to(data.chatId).emit('message_delivered', payload);
 
-        // Also emit to all participants individually so their chat lists update
+        // Also emit to participants not currently in the room so their chat lists update
         const chat = await chatRepository.findById(data.chatId);
         if (chat) {
           chat.participants.forEach((p: any) => {
             const participantId = p._id.toString();
             if (participantId !== userId) {
-              emitToUser(participantId, 'message_delivered', payload);
+              const socketIds = activeConnections.get(participantId) || [];
+              socketIds.forEach((sId) => {
+                const clientSocket = io.sockets.sockets.get(sId);
+                if (clientSocket && !clientSocket.rooms.has(data.chatId)) {
+                  clientSocket.emit('message_delivered', payload);
+                }
+              });
             }
           });
         }
@@ -254,13 +265,19 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
         const payload = { chatId: data.chatId, userId, seenAt: now.toISOString(), deliveredAt: now.toISOString() };
         socket.to(data.chatId).emit('message_seen', payload);
 
-        // Also emit to all participants individually so their chat lists update
+        // Also emit to participants not currently in the room so their chat lists update
         const chat = await chatRepository.findById(data.chatId);
         if (chat) {
           chat.participants.forEach((p: any) => {
             const participantId = p._id.toString();
             if (participantId !== userId) {
-              emitToUser(participantId, 'message_seen', payload);
+              const socketIds = activeConnections.get(participantId) || [];
+              socketIds.forEach((sId) => {
+                const clientSocket = io.sockets.sockets.get(sId);
+                if (clientSocket && !clientSocket.rooms.has(data.chatId)) {
+                  clientSocket.emit('message_seen', payload);
+                }
+              });
             }
           });
         }

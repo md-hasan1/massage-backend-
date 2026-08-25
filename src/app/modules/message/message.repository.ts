@@ -25,7 +25,15 @@ export class MessageRepository {
       replyTo: messageData.replyTo ? new Types.ObjectId(messageData.replyTo) : undefined,
       status: 'sent',
     });
-    return message.populate('senderId', 'name email photoUrl');
+    const populated = await Message.findById(message._id)
+      .populate('senderId', 'name email photoUrl')
+      .populate({
+        path: 'replyTo',
+        select: 'content senderId messageType',
+        populate: { path: 'senderId', select: 'name' }
+      })
+      .exec();
+    return populated || message;
   }
 
   /// Find chat messages history (paginated, excluding messages deleted for this user)
