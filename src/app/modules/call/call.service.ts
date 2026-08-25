@@ -30,6 +30,7 @@ export class CallService {
   }
 
   async deleteCallLog(id: string, userId: string): Promise<ICall> {
+    console.log("test")
     const call = await this.callRepository.findById(id);
     if (!call) {
       throw new AppError('Call log not found', 404);
