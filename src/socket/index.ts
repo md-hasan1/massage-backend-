@@ -26,13 +26,13 @@ export const getIO = (): SocketServer => {
 
 export const emitToUser = (userId: any, event: string, data: any) => {
   const targetId = userId?.toString() ?? '';
-  const socketIds = activeConnections.get(targetId);
-  logger.debug(`emitToUser: userId = ${targetId}, event = ${event}, active socketIds = ${JSON.stringify(socketIds)}`);
-  if (socketIds && socketIds.length > 0) {
+  if (!targetId) return;
+  try {
     const io = getIO();
-    socketIds.forEach((socketId) => {
-      io.to(socketId).emit(event, data);
-    });
+    logger.debug(`emitToUser: userId = ${targetId}, event = ${event}`);
+    io.to(targetId).emit(event, data);
+  } catch (err) {
+    logger.error(`emitToUser error: ${err}`);
   }
 };
 
@@ -90,6 +90,7 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
 
   io.on('connection', async (socket: Socket) => {
     const userId = socket.data.userId.toString();
+    socket.join(userId);
     logger.info(`🟢 Socket client connected: SocketID = ${socket.id}, UserID = ${userId}`);
 
     // Register active connection
