@@ -48,23 +48,31 @@ export const initializeSocket = (server: HttpServer): SocketServer => {
 
   // JWT Authentication Middleware for Sockets
   io.use((socket: Socket, next) => {
-    const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization;
-    if (!token) {
+    const rawAuth = socket.handshake.auth?.token || socket.handshake.headers?.authorization;
+    if (!rawAuth || typeof rawAuth !== 'string' || !rawAuth.trim()) {
       return next(new Error('Authentication token required'));
     }
 
-    let cleanToken = (token || '').trim();
-    // Iteratively strip leading "Bearer ", quotes, and whitespace
+    let cleanToken = rawAuth.trim();
+    // Iteratively strip leading "Bearer ", "Bearer", quotes, and whitespace
     while (
       cleanToken.toLowerCase().startsWith('bearer ') ||
+      cleanToken.toLowerCase() === 'bearer' ||
       (cleanToken.startsWith('"') && cleanToken.endsWith('"')) ||
       (cleanToken.startsWith("'") && cleanToken.endsWith("'"))
     ) {
       if (cleanToken.toLowerCase().startsWith('bearer ')) {
         cleanToken = cleanToken.slice(7).trim();
+      } else if (cleanToken.toLowerCase() === 'bearer') {
+        cleanToken = '';
+        break;
       } else {
         cleanToken = cleanToken.slice(1, -1).trim();
       }
+    }
+
+    if (!cleanToken) {
+      return next(new Error('Authentication token required'));
     }
 
     logger.info(`Socket Handshake Token: ${cleanToken.substring(0, 20)}...`);
