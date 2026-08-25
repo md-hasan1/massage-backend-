@@ -46,6 +46,16 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Mount consolidated API Routes under /api/v1
 app.use('/api/v1', apiRouter);
 
+// Root endpoint
+app.get('/', (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Chat App Backend API is running',
+    environment: config.env,
+    timestamp: new Date(),
+  });
+});
+
 // Basic health check endpoint for monitoring
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({
