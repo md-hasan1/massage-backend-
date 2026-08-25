@@ -236,28 +236,34 @@ export class FriendService {
     const incoming: any[] = [];
     const outgoing: any[] = [];
 
-    requests.forEach((r) => {
-      if (r.recipient._id.toString() === userId) {
+    requests.forEach((r: any) => {
+      const recipientId = (r.recipient?._id || r.recipient)?.toString();
+      const requesterId = (r.requester?._id || r.requester)?.toString();
+      const currentUserId = userId.toString();
+
+      if (recipientId === currentUserId) {
+        const senderObj = typeof r.requester === 'object' && r.requester !== null ? r.requester : {};
         incoming.push({
-          requestId: r._id,
+          requestId: r._id.toString(),
           sender: {
-            id: r.requester._id,
-            name: (r.requester as any).name,
-            email: (r.requester as any).email,
-            bio: (r.requester as any).bio,
-            photoUrl: (r.requester as any).photoUrl,
+            id: senderObj._id?.toString() || requesterId,
+            name: senderObj.name || 'User',
+            email: senderObj.email || '',
+            bio: senderObj.bio,
+            photoUrl: senderObj.photoUrl,
           },
           createdAt: r.createdAt,
         });
-      } else {
+      } else if (requesterId === currentUserId) {
+        const recipientObj = typeof r.recipient === 'object' && r.recipient !== null ? r.recipient : {};
         outgoing.push({
-          requestId: r._id,
+          requestId: r._id.toString(),
           receiver: {
-            id: r.recipient._id,
-            name: (r.recipient as any).name,
-            email: (r.recipient as any).email,
-            bio: (r.recipient as any).bio,
-            photoUrl: (r.recipient as any).photoUrl,
+            id: recipientObj._id?.toString() || recipientId,
+            name: recipientObj.name || 'User',
+            email: recipientObj.email || '',
+            bio: recipientObj.bio,
+            photoUrl: recipientObj.photoUrl,
           },
           createdAt: r.createdAt,
         });
